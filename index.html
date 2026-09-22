@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SOS Beacon | Emergency Tactical Dashboard</title>
+  
+  <!-- Google Fonts: Syne & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@500;700;800&family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    /* ==========================================================================
+       1. ROOT CSS & TACTICAL COLOR PALETTE (DARK CYBERNETIC THEME)
+       ========================================================================== */
+    :root {
+      --bg-base: #06080d;
+      --bg-surface: #0c1018;
+      --bg-card: rgba(16, 22, 34, 0.78);
+      --bg-card-hover: rgba(22, 30, 48, 0.9);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(255, 45, 85, 0.35);
+
+      /* Neon Colors inspired by reference screenshots */
+      --neon-red: #ff2a54;
+      --neon-red-glow: rgba(255, 42, 84, 0.45);
+      --neon-cyan: #00f0ff;
+      --neon-cyan-glow: rgba(0, 240, 255, 0.3);
+      --neon-lime: #c6ff00;
+      --neon-amber: #ffaa00;
+      --neon-purple: #8b5cf6;
+
+      --text-main: #f3f6fc;
+      --text-muted: #828fa6;
+      --font-heading: 'Syne', sans-serif;
+      --font-body: 'Urbanist', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 10px;
+      --radius-md: 18px;
+      --radius-lg: 26px;
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 42, 84, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ==========================================================================
+       2. LAYOUT STRUCTURE
+       ========================================================================== */
+    .dashboard-wrapper {
+      width: 100%;
+      max-width: 1400px;
+      min-height: 100vh;
+      display: flex;
+      padding: 20px;
+      gap: 24px;
+    }
+
+    /* Desktop Sidebar (Collapses on Mobile) */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 26px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-badge {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--neon-red), #990022);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 0 15px var(--neon-red-glow);
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-tag {
+      font-size: 0.68rem;
+      color: var(--neon-red);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+
+    .nav-menu {
+      list-style: none;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      letter-spacing: 1.2px;
+      margin: 14px 0 6px 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      color: white;
+      background: rgba(255, 42, 84, 0.12);
+      border-left: 3px solid var(--neon-red);
+    }
+
+    .nav-item.active i {
+      color: var(--neon-red);
+      filter: drop-shadow(0 0 8px var(--neon-red-glow));
+    }
+
+    .sidebar-footer {
+      background: rgba(0, 0, 0, 0.35);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+    }
+
+    .sidebar-footer .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    /* Main Content Area */
+    .main-canvas {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    /* Top Bar */
+    .topbar {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-welcome h2 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .user-welcome p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .top-telemetry-pills {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .telemetry-pill {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 14px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon-lime);
+      box-shadow: 0 0 10px var(--neon-lime);
+    }
+
+    .status-dot.offline {
+      background: var(--neon-amber);
+      box-shadow: 0 0 10px var(--neon-amber);
+    }
+
+    /* ==========================================================================
+       3. GRID SYSTEM & TACTICAL CARDS
+       ========================================================================== */
+    .grid-row-hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title i {
+      color: var(--neon-cyan);
+      font-size: 0.95rem;
+    }
+
+    /* ==========================================================================
+       4. GLOWING ORB & BEACON TRIGGER (INSPIRED BY IMAGE 2)
+       ========================================================================== */
+    .beacon-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      background: radial-gradient(circle at 50% 45%, rgba(255, 42, 84, 0.12) 0%, rgba(16, 22, 34, 0.8) 70%);
+      border: 1px solid rgba(255, 42, 84, 0.25);
+    }
+
+    .orb-stage {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0 20px 0;
+    }
+
+    /* Radar wave animations */
+    .radar-pulse {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px solid var(--neon-red);
+      opacity: 0;
+      animation: radarRipples 3s linear infinite;
+    }
+
+    .radar-pulse:nth-child(2) {
+      animation-delay: 1s;
+    }
+
+    .radar-pulse:nth-child(3) {
+      animation-delay: 2s;
+    }
+
+    @keyframes radarRipples {
+      0% {
+        transform: scale(0.65);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(1.4);
+        opacity: 0;
+      }
+    }
+
+    /* Central Glowing Orb Button */
+    .orb-button {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      background: radial-gradient(circle, #ff3366 0%, #d80032 60%, #590014 100%);
+      box-shadow: 
+        0 0 30px rgba(255, 42, 84, 0.6),
+        inset 0 0 20px rgba(255, 255, 255, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      transition: transform 0.15s ease;
+      user-select: none;
+    }
+
+    .orb-button:active {
+      transform: scale(0.96);
+    }
+
+    .orb-core-glow {
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
+      pointer-events: none;
+      animation: corePulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes corePulse {
+      0% { opacity: 0.3; transform: scale(0.95); }
+      100% { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    .orb-text {
+      font-family: var(--font-heading);
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      position: relative;
+      z-index: 2;
+    }
+
+    .orb-subtext {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 3px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* SVG Radial Charging Meter around Orb */
+    .progress-svg {
+      position: absolute;
+      width: 216px;
+      height: 216px;
+      transform: rotate(-90deg);
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.06);
+      stroke-width: 7;
+    }
+
+    .circle-fill {
+      fill: none;
+      stroke: var(--neon-cyan);
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-dasharray: 603; /* 2 * PI * 96 */
+      stroke-dashoffset: 603;
+      transition: stroke-dashoffset 0.05s linear;
+      filter: drop-shadow(0 0 8px var(--neon-cyan));
+    }
+
+    .beacon-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .quick-preset-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .preset-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .preset-chip:hover, .preset-chip.active {
+      color: white;
+      border-color: var(--neon-red);
+      background: rgba(255, 42, 84, 0.15);
+    }
+
+    /* ==========================================================================
+       5. TELEMETRY & GEO-HASH PANELS (IMAGE 1 GAUGES STYLE)
+       ========================================================================== */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .telemetry-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      position: relative;
+    }
+
+    .telemetry-box .meta-tag {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .telemetry-box .big-metric {
+      font-family: var(--font-mono);
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin: 10px 0 4px 0;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .telemetry-box .metric-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .highlight-geohash {
+      color: var(--neon-cyan) !important;
+      text-shadow: 0 0 12px var(--neon-cyan-glow);
+    }
+
+    /* Radial Arc Readiness Gauge (Like Image 1 Risk Score) */
+    .readiness-container {
+      margin-top: 16px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .arc-gauge-wrapper {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .arc-gauge-wrapper svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .arc-gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 8;
+    }
+
+    .arc-gauge-bar {
+      fill: none;
+      stroke: var(--neon-lime);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 226;
+      stroke-dashoffset: 45; /* ~80% readiness */
+      filter: drop-shadow(0 0 6px var(--neon-lime));
+    }
+
+    .arc-gauge-val {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    /* ==========================================================================
+       6. EMERGENCY CONTACTS & LOGS SECTION
+       ========================================================================== */
+    .grid-row-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .contact-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .input-field {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: white;
+      font-size: 0.85rem;
+      font-family: var(--font-body);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .input-field:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan-glow);
+    }
+
+    .action-btn {
+      background: linear-gradient(135deg, #1e40af, #2563eb);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0 18px;
+      font-weight: 700;
+      font-family: var(--font-heading);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .action-btn:hover {
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+    }
+
+    .contacts-list {
+      list-style: none;
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .contact-item:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .contact-info-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .contact-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .contact-phone {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-delete:hover {
+      color: var(--neon-red);
+    }
+
+    /* Alert Audit Logs Table (Image 1 Style) */
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .audit-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .audit-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .badge-pill {
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .badge-pill.sent {
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--neon-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    /* Modal / Alert Overlay */
+    .alert-banner {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff2a54;
+      color: white;
+      padding: 14px 28px;
+      border-radius: 40px;
+      font-weight: 700;
+      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(255, 42, 84, 0.6);
+      font-family: var(--font-heading);
+      letter-spacing: 1px;
+    }
+
+    /* ==========================================================================
+       7. MOBILE RESPONSIVENESS & TOUCH ADAPTATION
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .dashboard-wrapper {
+        flex-direction: column;
+        padding: 14px;
+      }
+      .sidebar {
+        width: 100%;
+        border-radius: var(--radius-md);
+      }
+      .grid-row-hero, .grid-row-bottom {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .top-telemetry-pills {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .telemetry-grid {
+        grid-template-columns: 1fr;
+      }
+      .orb-stage {
+        width: 230px;
+        height: 230px;
+      }
+      .orb-button {
+        width: 150px;
+        height: 150px;
+      }
+      .progress-svg {
+        width: 180px;
+        height: 180px;
+      }
+      .circle-fill, .circle-bg {
+        r: 80;
+        cx: 90;
+        cy: 90;
+        stroke-dasharray: 502;
+        stroke-dashoffset: 502;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Temporary Emergency Trigger Banner -->
+  <div id="alertBanner" class="alert-banner">
+    <i class="fa-solid fa-satellite-dish"></i> EMERGENCY SMS BROADCAST DISPATCHED
+  </div>
+
+  <div class="dashboard-wrapper">
+    
+    <!-- LEFT NAVIGATION SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand-container">
+          <div class="brand-badge">
+            <i class="fa-solid fa-tower-broadcast"></i>
+          </div>
+          <div>
+            <div class="brand-title">SOS BEACON</div>
+            <div class="brand-tag">GEO-HASH ENGINE</div>
+          </div>
+        </div>
+
+        <div class="nav-label">Tactical System</div>
+        <ul class="nav-menu">
+          <li><a href="#" class="nav-item active"><i class="fa-solid fa-crosshairs"></i> SOS Console</a></li>
+          <li><a href="#contactsSec" class="nav-item"><i class="fa-solid fa-address-book"></i> Trusted Nodes</a></li>
+          <li><a href="#historySec" class="nav-item"><i class="fa-solid fa-clock-rotate-left"></i> Transmission Logs</a></li>
+          <li><a href="#settingsSec" class="nav-item"><i class="fa-solid fa-sliders"></i> Coordinates Config</a></li>
+        </ul>
+
+        <div class="nav-label">Security Protocol</div>
+        <ul class="nav-menu">
+          <li><a href="#" onclick="toggleSimulatedSiren()" class="nav-item" id="sirenBtn"><i class="fa-solid fa-bullhorn"></i> Test Siren Tone</a></li>
+          <li><a href="#" onclick="copyGeoHash()" class="nav-item"><i class="fa-solid fa-copy"></i> Copy Raw GeoHash</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="status-row">
+          <span style="color: var(--text-muted);">CU EF-3 Project</span>
+          <span style="color: var(--neon-lime); font-weight:700;">V1.0</span>
+        </div>
+        <div style="font-size: 0.72rem; color: #606d85; line-height: 1.4;">
+          100% Client-side privacy. Coordinates never leave phone hardware.
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD CANVAS -->
+    <main class="main-canvas">
+      
+      <!-- TOP STATUS & TELEMETRY BAR -->
+      <header class="topbar">
+        <div class="user-welcome">
+          <h2>Emergency Response Console</h2>
+          <p>Instant SMS Location Relay & Space-Filling GeoHash Encoding</p>
+        </div>
+
+        <div class="top-telemetry-pills">
+          <div class="telemetry-pill">
+            <span class="status-dot" id="networkDot"></span>
+            <span id="networkText">ONLINE</span>
+          </div>
+          <div class="telemetry-pill">
+            <i class="fa-solid fa-satellite" style="color: var(--neon-cyan);"></i>
+            <span id="gpsState">GPS LOCKING</span>
+          </div>
+          <div class="telemetry-pill">
+            <i class="fa-solid fa-shield-halved" style="color: var(--neon-lime);"></i>
+            <span>READY</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ROW 1: GLOWING ORB BEACON + TELEMETRY GAUGES -->
+      <div class="grid-row-hero">
+        
+        <!-- CARD: ORB SOS TRIGGER (INSPIRED BY REFERENCE IMAGE 2) -->
+        <section class="card beacon-card">
+          <div class="card-header" style="width: 100%;">
+            <div class="card-title">
+              <i class="fa-solid fa-circle-radiation" style="color: var(--neon-red);"></i> Emergency Trigger Core
+            </div>
+            <span class="telemetry-pill" style="font-size:0.7rem; color: var(--neon-red);">HOLD 1.5s</span>
+          </div>
+
+          <div class="orb-stage">
+            <div class="radar-pulse"></div>
+            <div class="radar-pulse"></div>
+            <div class="radar-pulse"></div>
+
+            <button id="sosOrb" class="orb-button" aria-label="Trigger Emergency SOS">
+              <div class="orb-core-glow"></div>
+              <span class="orb-text">SOS</span>
+              <span class="orb-subtext">HOLD TO SEND</span>
+            </button>
+
+            <svg class="progress-svg" viewBox="0 0 216 216">
+              <circle class="circle-bg" cx="108" cy="108" r="96" />
+              <circle class="circle-fill" id="chargeRing" cx="108" cy="108" r="96" />
+            </svg>
+          </div>
+
+          <div class="beacon-hint">
+            Press and hold to prevent accidental trigger. Haptic pulse enabled.
+          </div>
+
+          <!-- Quick Situation Presets -->
+          <div class="quick-preset-bar">
+            <button class="preset-chip active" onclick="setPreset(this, 'CRITICAL ACCIDENT')">Critical Emergency</button>
+            <button class="preset-chip" onclick="setPreset(this, 'MEDICAL DISTRESS')">Medical Need</button>
+            <button class="preset-chip" onclick="setPreset(this, 'IMMEDIATE THREAT')">Safety Threat</button>
+            <button class="preset-chip" onclick="setPreset(this, 'LOST / NO DATA')">Off-Grid Lost</button>
+          </div>
+        </section>
+
+        <!-- CARD: TACTICAL GAUGES & GEOHASH (INSPIRED BY REFERENCE IMAGE 1) -->
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-microchip"></i> Telemetry & Coordinates
+            </div>
+            <button onclick="refreshGPS()" class="telemetry-pill" style="cursor:pointer; color:var(--neon-cyan);">
+              <i class="fa-solid fa-arrows-rotate"></i> Sync
+            </button>
+          </div>
+
+          <div class="telemetry-grid">
+            <div class="telemetry-box">
+              <div class="meta-tag"><i class="fa-solid fa-hashtag"></i> 8-Char GeoHash</div>
+              <div class="big-metric highlight-geohash" id="geohashMetric">--------</div>
+              <div class="metric-note">Hierarchical bounding grid (~19m precision)</div>
+            </div>
+
+            <div class="telemetry-box">
+              <div class="meta-tag"><i class="fa-solid fa-bullseye"></i> GPS Fix Accuracy</div>
+              <div class="big-metric" id="accuracyMetric" style="color: var(--neon-lime);">-- m</div>
+              <div class="metric-note">Derived from phone satellite receiver</div>
+            </div>
+
+            <div class="telemetry-box">
+              <div class="meta-tag"><i class="fa-solid fa-map-pin"></i> Latitude</div>
+              <div class="big-metric" id="latMetric">00.0000°</div>
+              <div class="metric-note">WGS-84 Decimal coordinate</div>
+            </div>
+
+            <div class="telemetry-box">
+              <div class="meta-tag"><i class="fa-solid fa-map-pin"></i> Longitude</div>
+              <div class="big-metric" id="lonMetric">00.0000°</div>
+              <div class="metric-note">WGS-84 Decimal coordinate</div>
+            </div>
+          </div>
+
+          <!-- Arc Gauge Readiness Score (Like Image 1 Risk Score) -->
+          <div class="readiness-container">
+            <div>
+              <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">Readiness Factor</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); max-width:240px;">
+                Calculated based on GPS hardware lock, stored contacts, and network access.
+              </div>
+            </div>
+            <div class="arc-gauge-wrapper">
+              <svg viewBox="0 0 90 90">
+                <circle class="arc-gauge-bg" cx="45" cy="45" r="36"></circle>
+                <circle class="arc-gauge-bar" id="gaugeCircle" cx="45" cy="45" r="36"></circle>
+              </svg>
+              <div class="arc-gauge-val" id="gaugePercent">85%</div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+
+      <!-- ROW 2: EMERGENCY CONTACTS & ALERT AUDIT LOGS -->
+      <div class="grid-row-bottom">
+        
+        <!-- CONTACTS MANAGER -->
+        <section class="card" id="contactsSec">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-users-viewfinder"></i> Trusted Emergency Contacts
+            </div>
+            <span style="font-size:0.75rem; color:var(--text-muted);" id="contactCountBadge">0 configured</span>
+          </div>
+
+          <form id="addContactForm" class="contact-form">
+            <input type="text" id="nameInput" class="input-field" placeholder="Contact Name (e.g., Mom)" required />
+            <input type="tel" id="phoneInput" class="input-field" placeholder="Mobile # (+91...)" required />
+            <button type="submit" class="action-btn"><i class="fa-solid fa-plus"></i> Add</button>
+          </form>
+
+          <ul class="contacts-list" id="contactsUl">
+            <!-- Dynamically populated -->
+          </ul>
+        </section>
+
+        <!-- TRANSMISSION AUDIT LOGS TABLE -->
+        <section class="card" id="historySec">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-clock-rotate-left"></i> Transmission History
+            </div>
+            <button onclick="clearAuditHistory()" class="telemetry-pill" style="cursor:pointer; color:var(--neon-red);">
+              <i class="fa-solid fa-trash-can"></i> Clear
+            </button>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>GeoHash</th>
+                  <th>Contacts</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==========================================================================
+       8. EMBEDDED JAVASCRIPT: GEOHASH ENGINE, GPS & HOLD TRIGGER
+       ========================================================================== -->
+  <script>
+    /* --------------------------------------------------------------------------
+       A. PURE JAVASCRIPT GEOHASH ENCODER (Morton Space-Filling Curve)
+       Works 100% offline without any API or internet connection
+       -------------------------------------------------------------------------- */
+    const BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
+    const BITS = [16, 8, 4, 2, 1];
+
+    function calculateGeoHash(latitude, longitude, precision = 8) {
+      let isEven = true;
+      let latMin = -90.0, latMax = 90.0;
+      let lonMin = -180.0, lonMax = 180.0;
+      let geohash = "";
+      let bit = 0;
+      let ch = 0;
+
+      while (geohash.length < precision) {
+        let mid;
+        if (isEven) {
+          mid = (lonMin + lonMax) / 2;
+          if (longitude > mid) {
+            ch |= BITS[bit];
+            lonMin = mid;
+          } else {
+            lonMax = mid;
+          }
+        } else {
+          mid = (latMin + latMax) / 2;
+          if (latitude > mid) {
+            ch |= BITS[bit];
+            latMin = mid;
+          } else {
+            latMax = mid;
+          }
+        }
+
+        isEven = !isEven;
+        if (bit < 4) {
+          bit++;
+        } else {
+          geohash += BASE32[ch];
+          bit = 0;
+          ch = 0;
+        }
+      }
+      return geohash;
+    }
+
+    /* --------------------------------------------------------------------------
+       B. STATE MANAGEMENT
+       -------------------------------------------------------------------------- */
+    let currentCoords = { lat: null, lon: null, accuracy: null, geohash: '--------' };
+    let currentPreset = 'CRITICAL ACCIDENT';
+    let isSirenActive = false;
+    let audioCtx = null;
+    let sirenOsc = null;
+
+    /* --------------------------------------------------------------------------
+       C. GPS SATELLITE TRACKER
+       -------------------------------------------------------------------------- */
+    function refreshGPS() {
+      const gpsState = document.getElementById('gpsState');
+      gpsState.textContent = 'LOCKING GPS...';
+      gpsState.style.color = 'var(--neon-amber)';
+
+      if (!('geolocation' in navigator)) {
+        gpsState.textContent = 'GPS NOT SUPPORTED';
+        return;
+      }
+
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = Math.round(pos.coords.accuracy);
+          const hash = calculateGeoHash(lat, lon, 8);
+
+          currentCoords = { lat, lon, accuracy: acc, geohash: hash };
+
+          document.getElementById('latMetric').textContent = lat.toFixed(5) + '°';
+          document.getElementById('lonMetric').textContent = lon.toFixed(5) + '°';
+          document.getElementById('accuracyMetric').textContent = acc + ' m';
+          document.getElementById('geohashMetric').textContent = hash;
+
+          gpsState.textContent = 'GPS LOCKED';
+          gpsState.style.color = 'var(--neon-lime)';
+          updateReadinessScore();
+        },
+        (err) => {
+          gpsState.textContent = 'LOCATION DENIED';
+          gpsState.style.color = 'var(--neon-red)';
+          // Default fallback demo coordinates for Chandigarh University
+          currentCoords = { lat: 30.7699, lon: 76.5759, accuracy: 12, geohash: calculateGeoHash(30.7699, 76.5759, 8) };
+          document.getElementById('latMetric').textContent = '30.7699°';
+          document.getElementById('lonMetric').textContent = '76.5759°';
+          document.getElementById('accuracyMetric').textContent = '12 m (Demo)';
+          document.getElementById('geohashMetric').textContent = currentCoords.geohash;
+          updateReadinessScore();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+    }
+    refreshGPS();
+
+    /* --------------------------------------------------------------------------
+       D. ONLINE / OFFLINE DETECTOR
+       -------------------------------------------------------------------------- */
+    function checkNetwork() {
+      const dot = document.getElementById('networkDot');
+      const text = document.getElementById('networkText');
+      if (navigator.onLine) {
+        dot.className = 'status-dot';
+        text.textContent = 'ONLINE';
+      } else {
+        dot.className = 'status-dot offline';
+        text.textContent = 'OFFLINE (SMS ACTIVE)';
+      }
+      updateReadinessScore();
+    }
+    window.addEventListener('online', checkNetwork);
+    window.addEventListener('offline', checkNetwork);
+    checkNetwork();
+
+    /* --------------------------------------------------------------------------
+       E. HOLD-TO-CHARGE TRIGGER WITH PROGRESS RING
+       -------------------------------------------------------------------------- */
+    const HOLD_TIME = 1500; // 1.5 seconds
+    let holdStartTime = 0;
+    let holdTimer = null;
+    const ring = document.getElementById('chargeRing');
+    const ringRadius = 96;
+    const ringCircumference = 2 * Math.PI * ringRadius;
+
+    ring.style.strokeDasharray = `${ringCircumference}`;
+    ring.style.strokeDashoffset = `${ringCircumference}`;
+
+    const sosOrb = document.getElementById('sosOrb');
+
+    function startPress(e) {
+      e.preventDefault();
+      holdStartTime = Date.now();
+      if (navigator.vibrate) navigator.vibrate(40);
+
+      holdTimer = setInterval(() => {
+        const elapsed = Date.now() - holdStartTime;
+        const progress = Math.min(elapsed / HOLD_TIME, 1);
+        ring.style.strokeDashoffset = ringCircumference - (progress * ringCircumference);
+
+        if (progress >= 1) {
+          clearInterval(holdTimer);
+          triggerEmergencySOS();
+          resetRing();
+        }
+      }, 25);
+    }
+
+    function cancelPress() {
+      clearInterval(holdTimer);
+      resetRing();
+    }
+
+    function resetRing() {
+      ring.style.strokeDashoffset = `${ringCircumference}`;
+    }
+
+    sosOrb.addEventListener('mousedown', startPress);
+    sosOrb.addEventListener('touchstart', startPress);
+    window.addEventListener('mouseup', cancelPress);
+    window.addEventListener('touchend', cancelPress);
+
+    /* --------------------------------------------------------------------------
+       F. EMERGENCY SMS BROADCAST DISPATCH
+       -------------------------------------------------------------------------- */
+    function triggerEmergencySOS() {
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+
+      const contacts = getContacts();
+      if (contacts.length === 0) {
+        alert("Please add at least 1 emergency contact in 'Trusted Nodes' below.");
+        return;
+      }
+
+      // Flash emergency banner
+      const banner = document.getElementById('alertBanner');
+      banner.style.display = 'block';
+      setTimeout(() => banner.style.display = 'none', 4000);
+
+      // Construct payload
+      const mapsUrl = currentCoords.lat 
+        ? `https://maps.google.com/?q=${currentCoords.lat},${currentCoords.lon}` 
+        : 'GPS Pending';
+      
+      const messageBody = `SOS! [${currentPreset}] Need urgent help. GeoHash: ${currentCoords.geohash} | Pin: ${mapsUrl}`;
+      const phoneList = contacts.map(c => c.phone).join(',');
+      
+      // iOS requires '&body=' while Android/RFC standards use '?body='
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const delimiter = isIOS ? '&' : '?';
+      const smsLink = `sms:${phoneList}${delimiter}body=${encodeURIComponent(messageBody)}`;
+
+      // Save transmission audit log
+      logAudit(currentCoords.geohash, contacts.length);
+
+      // Open Native Carrier SMS Client
+      window.location.href = smsLink;
+    }
+
+    function setPreset(elem, text) {
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      elem.classList.add('active');
+      currentPreset = text;
+    }
+
+    /* --------------------------------------------------------------------------
+       G. CONTACTS MANAGEMENT (LOCALSTORAGE)
+       -------------------------------------------------------------------------- */
+    function getContacts() {
+      return JSON.parse(localStorage.getItem('sos_contacts_v2')) || [
+        { name: "Emergency Dispatch (CU)", phone: "112" },
+        { name: "Family Primary", phone: "+919876543210" }
+      ];
+    }
+
+    function saveContacts(contacts) {
+      localStorage.setItem('sos_contacts_v2', JSON.stringify(contacts));
+      renderContacts();
+      updateReadinessScore();
+    }
+
+    document.getElementById('addContactForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('nameInput').value.trim();
+      const phone = document.getElementById('phoneInput').value.trim();
+      
+      const contacts = getContacts();
+      contacts.push({ name, phone });
+      saveContacts(contacts);
+
+      document.getElementById('nameInput').value = '';
+      document.getElementById('phoneInput').value = '';
+    });
+
+    function deleteContact(idx) {
+      const contacts = getContacts();
+      contacts.splice(idx, 1);
+      saveContacts(contacts);
+    }
+
+    function renderContacts() {
+      const list = document.getElementById('contactsUl');
+      const contacts = getContacts();
+      document.getElementById('contactCountBadge').textContent = `${contacts.length} configured`;
+
+      if (contacts.length === 0) {
+        list.innerHTML = `<li style="color:var(--text-muted); font-size:0.85rem; padding:10px;">No contacts added yet.</li>`;
+        return;
+      }
+
+      list.innerHTML = contacts.map((c, i) => `
+        <li class="contact-item">
+          <div class="contact-info-block">
+            <span class="contact-name">${c.name}</span>
+            <span class="contact-phone">${c.phone}</span>
+          </div>
+          <button class="btn-delete" onclick="deleteContact(${i})" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+        </li>
+      `).join('');
+    }
+
+    /* --------------------------------------------------------------------------
+       H. AUDIT LOGS MANAGEMENT
+       -------------------------------------------------------------------------- */
+    function getAudit() {
+      return JSON.parse(localStorage.getItem('sos_audit_v2')) || [];
+    }
+
+    function logAudit(hash, contactCount) {
+      const logs = getAudit();
+      const now = new Date();
+      logs.unshift({
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        hash: hash,
+        contacts: contactCount + ' Nodes'
+      });
+      localStorage.setItem('sos_audit_v2', JSON.stringify(logs.slice(0, 10)));
+      renderAudit();
+    }
+
+    function renderAudit() {
+      const tbody = document.getElementById('auditTableBody');
+      const logs = getAudit();
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No emergency alerts recorded yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = logs.map(l => `
+        <tr>
+          <td>${l.time}</td>
+          <td style="color:var(--neon-cyan);">${l.hash}</td>
+          <td>${l.contacts}</td>
+          <td><span class="badge-pill sent">SMS Ready</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function clearAuditHistory() {
+      localStorage.removeItem('sos_audit_v2');
+      renderAudit();
+    }
+
+    /* --------------------------------------------------------------------------
+       I. READINESS SCORE CALCULATION
+       -------------------------------------------------------------------------- */
+    function updateReadinessScore() {
+      let score = 30; // base system operational
+      if (currentCoords.lat !== null) score += 40;
+      if (getContacts().length > 0) score += 30;
+
+      const gaugeCircle = document.getElementById('gaugeCircle');
+      const gaugePercent = document.getElementById('gaugePercent');
+      
+      const circumference = 226; // 2 * PI * 36
+      const offset = circumference - (score / 100 * circumference);
+      gaugeCircle.style.strokeDashoffset = offset;
+      gaugePercent.textContent = score + '%';
+
+      if (score === 100) {
+        gaugeCircle.style.stroke = 'var(--neon-lime)';
+      } else {
+        gaugeCircle.style.stroke = 'var(--neon-amber)';
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       J. TACTICAL SIREN SYNTHESIZER (WEB AUDIO API)
+       -------------------------------------------------------------------------- */
+    function toggleSimulatedSiren() {
+      const btn = document.getElementById('sirenBtn');
+      if (!isSirenActive) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          sirenOsc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          
+          sirenOsc.type = 'sawtooth';
+          sirenOsc.frequency.setValueAtTime(650, audioCtx.currentTime);
+          sirenOsc.frequency.linearRampToValueAtTime(950, audioCtx.currentTime + 0.5);
+
+          gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          sirenOsc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          
+          sirenOsc.start();
+          isSirenActive = true;
+          btn.innerHTML = `<i class="fa-solid fa-volume-xmark" style="color:var(--neon-red);"></i> Stop Siren`;
+        } catch (e) {
+          alert("Audio synthesizer error: " + e.message);
+        }
+      } else {
+        if (sirenOsc) {
+          sirenOsc.stop();
+          sirenOsc.disconnect();
+        }
+        isSirenActive = false;
+        btn.innerHTML = `<i class="fa-solid fa-bullhorn"></i> Test Siren Tone`;
+      }
+    }
+
+    function copyGeoHash() {
+      if (currentCoords.geohash) {
+        navigator.clipboard.writeText(currentCoords.geohash).then(() => {
+          alert("Copied GeoHash to clipboard: " + currentCoords.geohash);
+        });
+      }
+    }
+
+    // Initialize UI
+    renderContacts();
+    renderAudit();
+    updateReadinessScore();
+  </script>
+</body>
+</html>
